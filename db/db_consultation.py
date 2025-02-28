@@ -1,7 +1,7 @@
 from db.mysql import update_sql, query_sql, build_create, build_update
 import datetime
 consult_table = 'consultation'
-
+ai_request_table = "ai_request"
 
 def create_consult(name, sex, age, chief_complaint, day=datetime.date.today()):
     info = {
@@ -56,3 +56,15 @@ def update_consult_diagnosis(id, diagnosis):
 
 def update_consult_chief(id, chief):
     update_sql(f"update {consult_table} set chief_complaint='{chief}' where id= {id}")
+
+
+def add_ai_request(plat, model, request, answer, cost):
+    info = {
+        "plat": plat,
+        "model": model,
+        "request": request,
+        "answer": answer,
+        "cost": cost
+    }
+    sql = build_create(info, ai_request_table)
+    update_sql(sql)
