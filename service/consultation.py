@@ -2,7 +2,7 @@ from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CON
 from db import db_consultation
 import datetime
 
-from service.llm import hxq_llm
+from service.llm import hxq_llm, tongyi_llm
 from service.log import logger
 from service.question import question_service
 from utils import remove_think_tags
@@ -56,7 +56,8 @@ class ConsultationService:
         user_message = {"role": "user", "content": CONSULT_REPORT_PROMPT_TEMPLATE.format(patient_info=patient_info,conversation=conversation)}
         chat_messages.append(user_message)
         logger.info(f"gen_consult_report chat_messages: {chat_messages}")
-        report = hxq_llm.chat(chat_messages)
+        # report = hxq_llm.chat(chat_messages)
+        report = tongyi_llm.chat(chat_messages)
         logger.info(f"gen_consult_report report: {report}")
         self.update_consult({"id": consult_id, "report": remove_think_tags(report), "status": CONSULT_STATUS_REPORT})
         consult = self.get_consult(consult_id)
