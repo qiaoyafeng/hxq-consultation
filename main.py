@@ -126,6 +126,9 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
     consult = consultation_service.get_consult(consult_id)
     if not consult:
         return build_resp(404, {}, message="问诊记录不存在！")
+    is_ipt = False
+    if consult["name"].startswith("ipt"):
+        is_ipt = True
     questions = question_service.get_consult_questions(consult_id)
     if questions:
         if answer:
@@ -138,9 +141,9 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
                 questions[-1]["answer"] = answer
         else:
             return build_resp(422, {}, message="回复不能为空！")
-        question = consultation_service.get_consult_next_question(consult_id, answer, questions)
+        question = consultation_service.get_consult_next_question(consult_id, answer, questions, is_ipt=is_ipt)
     else:
-        question = consultation_service.get_consult_next_question(consult_id, answer)
+        question = consultation_service.get_consult_next_question(consult_id, answer,is_ipt=is_ipt)
     logger.info(f"question_next: consult: {consult}, question: {question}")
     return build_resp(0, {"is_has_next": 1, "question": question})
 
