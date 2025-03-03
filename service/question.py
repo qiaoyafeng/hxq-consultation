@@ -37,7 +37,7 @@ class QuestionService:
         if answer:
             if is_last_question:
                 chat_messages.extend(messages)
-                chat_messages.append({"role": "user", "content": "请医生根据这次问诊进行总结,并结束本次问诊。"})
+                chat_messages.append({"role": "user", "content": "请医生根据这次问诊进行总结，并结束本次问诊，总结不超过30字。"})
             else:
                 chat_messages.extend(messages)
         else:
