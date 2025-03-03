@@ -38,7 +38,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     message = f"参数验证失败。"
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=build_resp(status.HTTP_422_UNPROCESSABLE_ENTITY, {}, message=message)
+        content=build_resp(status.HTTP_422_UNPROCESSABLE_ENTITY, {}, message=message),
     )
 
 
@@ -67,7 +67,9 @@ scheduler = BackgroundScheduler()
 @app.on_event("startup")
 async def startup_event():
     scheduler.start()
-    scheduler.add_job(consultation_service.gen_consult_report_job, "interval", seconds=5)
+    scheduler.add_job(
+        consultation_service.gen_consult_report_job, "interval", seconds=3
+    )
 
 
 @app.get("/docs", include_in_schema=False)
@@ -134,21 +136,36 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
     if questions:
         if answer:
             if len(questions) == consult["question_nums"]:
-                question_service.update_consult_question(questions[-1]["id"], answer)
-                consultation_service.update_consult({"id": consult_id, "status": CONSULT_STATUS_DONE})
-                return build_resp(0, {"is_has_next": 0, "question": ""})
-            elif len(questions) == consult["question_nums"] - 1:
-                question_service.update_consult_question(questions[-1]["id"], answer)
                 is_last_question = True
+                question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
+                consultation_service.update_consult(
+                    {"id": consult_id, "status": CONSULT_STATUS_DONE}
+                )
+                question = consultation_service.get_consult_next_question(
+                    consult_id,
+                    answer,
+                    questions,
+                    is_ipt=is_ipt,
+                    is_last_question=is_last_question,
+                )
+                return build_resp(0, {"is_has_next": 0, "question": question})
             else:
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
         else:
             return build_resp(422, {}, message="回复不能为空！")
-        question = consultation_service.get_consult_next_question(consult_id, answer, questions, is_ipt=is_ipt, is_last_question=is_last_question)
+        question = consultation_service.get_consult_next_question(
+            consult_id,
+            answer,
+            questions,
+            is_ipt=is_ipt,
+            is_last_question=is_last_question,
+        )
     else:
-        question = consultation_service.get_consult_next_question(consult_id, answer, is_ipt=is_ipt)
+        question = consultation_service.get_consult_next_question(
+            consult_id, answer, is_ipt=is_ipt
+        )
     logger.info(f"question_next: consult: {consult}, question: {question}")
     return build_resp(0, {"is_has_next": 1, "question": question})
 
