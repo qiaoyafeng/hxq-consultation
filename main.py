@@ -130,20 +130,25 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
     if consult["name"].startswith("ipt"):
         is_ipt = True
     questions = question_service.get_consult_questions(consult_id)
+    is_last_question = False
     if questions:
         if answer:
-            if len(questions) >= random.randint(settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS):
+            if len(questions) == consult["question_nums"]:
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 consultation_service.update_consult({"id": consult_id, "status": CONSULT_STATUS_DONE})
                 return build_resp(0, {"is_has_next": 0, "question": ""})
+            elif len(questions) == consult["question_nums"] - 1:
+                question_service.update_consult_question(questions[-1]["id"], answer)
+                is_last_question = True
+                questions[-1]["answer"] = answer
             else:
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
         else:
             return build_resp(422, {}, message="回复不能为空！")
-        question = consultation_service.get_consult_next_question(consult_id, answer, questions, is_ipt=is_ipt)
+        question = consultation_service.get_consult_next_question(consult_id, answer, questions, is_ipt=is_ipt, is_last_question=is_last_question)
     else:
-        question = consultation_service.get_consult_next_question(consult_id, answer,is_ipt=is_ipt)
+        question = consultation_service.get_consult_next_question(consult_id, answer, is_ipt=is_ipt)
     logger.info(f"question_next: consult: {consult}, question: {question}")
     return build_resp(0, {"is_has_next": 1, "question": question})
 

@@ -1,3 +1,6 @@
+import random
+
+from config import settings
 from db.mysql import update_sql, query_sql, build_create, build_update
 import datetime
 consult_table = 'consultation'
@@ -9,6 +12,7 @@ def create_consult(name, sex, age, chief_complaint, day=datetime.date.today()):
         "sex": sex,
         "age": age,
         "day": day,
+        "question_nums": random.randint(settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS),
         "start_time": datetime.datetime.now()
     }
     if chief_complaint:

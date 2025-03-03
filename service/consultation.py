@@ -26,12 +26,12 @@ class ConsultationService:
     def get_consult_questions(self, consult_id):
         return self.question_service.get_consult_questions(consult_id)
 
-    def get_consult_next_question(self, consult_id, answer=None, questions=None, is_ipt=False):
+    def get_consult_next_question(self, consult_id, answer=None, questions=None, is_ipt=False, is_last_question=False):
         if questions:
             messages = []
             for q in questions:
                 messages.extend([{"role": "assistant", "content": f"{q['question']}"}, {"role": "user", "content": f"{q['answer']}"}])
-            question = self.question_service.next_question(answer, messages=messages, is_ipt=is_ipt)
+            question = self.question_service.next_question(answer, messages=messages, is_ipt=is_ipt, is_last_question=is_last_question)
         else:
             question = self.question_service.next_question(answer, is_ipt=is_ipt)
 
