@@ -5,6 +5,22 @@ CONSULT_STATUS_PROCESSING = 2
 CONSULT_STATUS_DONE = 3
 CONSULT_STATUS_REPORT = 4
 
+# ########################################### LLM参数 #######################################
+
+LLM_HXQ_PLAT_ID = 1  # hxq_llm
+LLM_TONGYI_PLAT_ID = 2  # tongyi
+
+LLM_HXQ_PLAT_DICT = {
+    LLM_HXQ_PLAT_ID: "hxq_llm",
+    LLM_TONGYI_PLAT_ID: "tongyi",
+}
+
+LLM_HXQ_MODEL_DS_R1_8B_ID = 1
+LLM_HXQ_MODEL_DICT = {LLM_HXQ_MODEL_DS_R1_8B_ID: "deepseek-r1:8b"}
+
+LLM_TONGYI_MODEL_QWEN_PLUS_ID = 1
+LLM_TONGYI_MODEL_DICT = {LLM_TONGYI_MODEL_QWEN_PLUS_ID: "qwen-plus"}
+
 # ########################################### 问题相关参数 #######################################
 
 QUESTIONS = [

@@ -1,6 +1,7 @@
 import time
 
-from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CONSULT_STATUS_DONE
+from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CONSULT_STATUS_DONE, LLM_HXQ_PLAT_ID, \
+    LLM_TONGYI_PLAT_ID, LLM_TONGYI_MODEL_QWEN_PLUS_ID, LLM_HXQ_MODEL_DS_R1_8B_ID
 from db import db_consultation
 import datetime
 
@@ -59,14 +60,14 @@ class ConsultationService:
         chat_messages.append(user_message)
         logger.info(f"gen_consult_report chat_messages: {chat_messages}")
         start = time.time()
-        # plat = "hxq_llm"
-        # model_name = "deepseek-r1:8b"
+        # plat = LLM_HXQ_PLAT_ID
+        # model = LLM_HXQ_MODEL_DS_R1_8B_ID
         # report = hxq_llm.chat(chat_messages)
-        plat = "tongyi"
-        model_name = "qwen-plus"
+        plat = LLM_TONGYI_PLAT_ID
+        model = LLM_TONGYI_MODEL_QWEN_PLUS_ID
         report = tongyi_llm.chat(chat_messages)
         cost = (time.time() - start) * 1000
-        db_consultation.add_ai_request(plat, model_name, f"{chat_messages}", f"{report}", cost)
+        db_consultation.add_ai_request(plat, model, f"{chat_messages}", f"{report}", cost)
         logger.info(f"gen_consult_report report: {report}")
         self.update_consult({"id": consult_id, "report": remove_think_tags(report), "status": CONSULT_STATUS_REPORT})
         consult = self.get_consult(consult_id)
