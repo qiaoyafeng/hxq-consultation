@@ -3,17 +3,25 @@ import random
 from config import settings
 from db.mysql import update_sql, query_sql, build_create, build_update
 import datetime
-consult_table = 'consultation'
+
+consult_table = "consultation"
 ai_request_table = "ai_request"
 
+
 def create_consult(name, sex, age, chief_complaint, day=datetime.date.today()):
+    if name.startswith("ipt"):
+        question_nums = 15
+    else:
+        question_nums = random.randint(
+            settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS
+        )
     info = {
         "name": name,
         "sex": sex,
         "age": age,
         "day": day,
-        "question_nums": random.randint(settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS),
-        "start_time": datetime.datetime.now()
+        "question_nums": question_nums,
+        "start_time": datetime.datetime.now(),
     }
     if chief_complaint:
         info.update({"chief_complaint": chief_complaint})
@@ -55,7 +63,9 @@ def update_consult_status(id, status):
 
 
 def update_consult_diagnosis(id, diagnosis):
-    update_sql(f"update {consult_table} set status=3, diagnosis='{diagnosis}' where id= {id}")
+    update_sql(
+        f"update {consult_table} set status=3, diagnosis='{diagnosis}' where id= {id}"
+    )
 
 
 def update_consult_chief(id, chief):
@@ -68,7 +78,7 @@ def add_ai_request(plat, model, request, answer, cost):
         "model": model,
         "request": request,
         "answer": answer,
-        "cost": cost
+        "cost": cost,
     }
     sql = build_create(info, ai_request_table)
     update_sql(sql)
