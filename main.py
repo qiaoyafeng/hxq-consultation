@@ -207,4 +207,6 @@ if __name__ == "__main__":
         port=settings.PORT,
         workers=settings.WORKERS,
         reload=settings.RELOAD,
+        ssl_keyfile="key.pem",
+        ssl_certfile="cert.pem",
     )
