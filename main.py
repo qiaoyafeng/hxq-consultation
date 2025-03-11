@@ -117,6 +117,7 @@ async def create_consult(data_request: CreateConsultRequest, request: Request):
 
 @app.post("/api/question_next", summary="获取问题")
 async def question_next(data_request: QuestionNextRequest, request: Request):
+    logger.info(f"question_next: request.headers: {request.headers}")
     consult_id = data_request.consult_id
     if not consult_id:
         consult_id = request.headers.get("consult_id")
@@ -172,10 +173,11 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
 
 @app.get("/api/get_consult", summary="获取问诊")
 async def get_consult(request: Request, consult_id: int = 0):
+    logger.info(f"get_consult: request.headers: {request.headers}")
     if not consult_id:
         consult_id = request.headers.get("consult_id")
     if not consult_id:
-        return build_resp(422, message="consult_id 字段为空")
+        return build_resp(422, {},  message="consult_id 字段为空")
 
     consult = consultation_service.get_consult(consult_id)
     print(f"consult: {consult}")
@@ -185,10 +187,11 @@ async def get_consult(request: Request, consult_id: int = 0):
 
 @app.post("/api/gen_consult_report", summary="生成报告")
 async def gen_consult_report(request: Request, consult_id: int = 0):
+    logger.info(f"gen_consult_report: request.headers: {request.headers}")
     if not consult_id:
         consult_id = request.headers.get("consult_id")
     if not consult_id:
-        return build_resp(422, message="consult_id 字段为空")
+        return build_resp(422, {}, message="consult_id 字段为空")
 
     consult = consultation_service.gen_consult_report(consult_id)
     print(f"consult: {consult}")
