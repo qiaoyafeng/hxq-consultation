@@ -201,12 +201,24 @@ async def gen_consult_report(request: Request, consult_id: int = 0):
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        app="__main__:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        workers=settings.WORKERS,
-        reload=settings.RELOAD,
-        ssl_keyfile="key.pem",
-        ssl_certfile="cert.pem",
-    )
+    ssl_keyfile = os.getenv("SSL_KEY", "key.pem")
+    ssl_certfile = os.getenv("SSL_CERT", "cert.pem")
+    if settings.USE_HTTPS:
+        uvicorn.run(
+            app="__main__:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            workers=settings.WORKERS,
+            reload=settings.RELOAD,
+            ssl_keyfile=ssl_keyfile,
+            ssl_certfile=ssl_certfile,
+        )
+    else:
+        uvicorn.run(
+            app="__main__:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            workers=settings.WORKERS,
+            reload=settings.RELOAD
+        )
+

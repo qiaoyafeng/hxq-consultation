@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     WORKERS: int = 1
     RELOAD: bool = False
+    USE_HTTPS: bool = False
 
     # DB
     DB_IP: str = "127.0.0.1"
