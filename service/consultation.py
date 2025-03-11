@@ -15,8 +15,8 @@ class ConsultationService:
     def __init__(self):
         self.question_service = question_service
 
-    def create_consult(self, name, sex, age, chief_complaint):
-        return db_consultation.create_consult(name, sex, age, chief_complaint)
+    def create_consult(self, name, sex, age, chief_complaint, batch_no):
+        return db_consultation.create_consult(name, sex, age, chief_complaint, batch_no)
 
     def get_consult(self, consult_id):
         return db_consultation.get_consult_by_id(consult_id)

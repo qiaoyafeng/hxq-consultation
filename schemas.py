@@ -10,6 +10,7 @@ class CreateConsultRequest(BaseModel):
     sex: int = None
     age: int = None
     chief_complaint: Optional[str] = None
+    batch_no: Optional[str] = None
 
 
 class QuestionNextRequest(BaseModel):

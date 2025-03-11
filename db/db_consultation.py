@@ -8,7 +8,7 @@ consult_table = "consultation"
 ai_request_table = "ai_request"
 
 
-def create_consult(name, sex, age, chief_complaint, day=datetime.date.today()):
+def create_consult(name, sex, age, chief_complaint, batch_no, day=datetime.date.today()):
     if name.startswith("ipt"):
         question_nums = 15
     else:
@@ -19,6 +19,7 @@ def create_consult(name, sex, age, chief_complaint, day=datetime.date.today()):
         "name": name,
         "sex": sex,
         "age": age,
+        "batch_no": batch_no,
         "day": day,
         "question_nums": question_nums,
         "start_time": datetime.datetime.now(),

@@ -110,7 +110,8 @@ async def create_consult(data_request: CreateConsultRequest, request: Request):
     sex = data_request.sex
     age = data_request.age
     chief_complaint = data_request.chief_complaint
-    consult = consultation_service.create_consult(name, sex, age, chief_complaint)
+    batch_no = data_request.batch_no
+    consult = consultation_service.create_consult(name, sex, age, chief_complaint, batch_no)
     print(f"consult: {consult}")
     return build_resp(0, consult)
 
