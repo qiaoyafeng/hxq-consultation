@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 from concurrent.futures import ThreadPoolExecutor
@@ -142,7 +143,7 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
                 consultation_service.update_consult(
-                    {"id": consult_id, "status": CONSULT_STATUS_DONE}
+                    {"id": consult_id, "end_time": datetime.datetime.now(), "status": CONSULT_STATUS_DONE}
                 )
                 question = consultation_service.get_consult_next_question(
                     consult_id,
