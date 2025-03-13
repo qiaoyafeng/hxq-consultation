@@ -1,7 +1,8 @@
 import time
 
 from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CONSULT_STATUS_DONE, LLM_HXQ_PLAT_ID, \
-    LLM_TONGYI_PLAT_ID, LLM_TONGYI_MODEL_QWEN_PLUS_ID, LLM_HXQ_MODEL_DS_R1_8B_ID, CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE
+    LLM_TONGYI_PLAT_ID, LLM_TONGYI_MODEL_QWEN_PLUS_ID, LLM_HXQ_MODEL_DS_R1_8B_ID, CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE, \
+    CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE
 from db import db_consultation
 import datetime
 
@@ -125,7 +126,7 @@ class ConsultationService:
         conversation = self.get_consult_qa_str_by_questions(questions)
         user_message = {"role": "user", "content": CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE.format(conversation=conversation)}
         chat_messages.append(user_message)
-        logger.info(f"gen_consult_report chat_messages: {chat_messages}")
+        logger.info(f"gen_consult_health_advice chat_messages: {chat_messages}")
         report_start_time = datetime.datetime.now()
         start = time.time()
         # plat = LLM_HXQ_PLAT_ID
@@ -152,6 +153,50 @@ class ConsultationService:
                 logger.info(f"gen_health_advice_job consult id: {consult['id']} ...")
                 self.gen_consult_health_advice(consult["id"])
                 logger.info(f"gen_health_advice_job consult id: {consult['id']}  done")
+
+    def gen_consult_key_phrase(self, consult_id):
+        logger.info(f"gen_consult_key_phrase: consult_id: {consult_id}....")
+        consult = self.get_consult(consult_id)
+        questions = self.get_consult_questions(consult_id)
+        if not(consult or questions):
+            return
+        logger.info(f"gen_consult_key_phrase: consult: {consult}, questions: {questions}， ")
+
+        chat_messages = [
+            {
+                "role": "system",
+                "content": f"你是一个专业的医学 NLP 研究员，擅长从医患对话中提取核心关键词。",
+            }
+        ]
+        conversation = self.get_consult_qa_str_by_questions(questions)
+        user_message = {"role": "user", "content": CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE.format(conversation=conversation)}
+        chat_messages.append(user_message)
+        logger.info(f"gen_consult_key_phrase chat_messages: {chat_messages}")
+        report_start_time = datetime.datetime.now()
+        start = time.time()
+        # plat = LLM_HXQ_PLAT_ID
+        # model = LLM_HXQ_MODEL_DS_R1_8B_ID
+        # report = hxq_llm.chat(chat_messages)
+        plat = LLM_TONGYI_PLAT_ID
+        model = LLM_TONGYI_MODEL_QWEN_PLUS_ID
+        content = tongyi_llm.chat(chat_messages)
+        cost = (time.time() - start) * 1000
+        db_consultation.add_ai_request(plat, model, f"{chat_messages}", f"{content}", cost)
+        logger.info(f"gen_consult_key_phrase report: {content}")
+        think, answer = extract_think_and_answer(content)
+        self.update_consult(
+            {"id": consult_id, "key_phrase": answer})
+        consult = self.get_consult(consult_id)
+        logger.info(f"gen_consult_key_phrase: consult_id: {consult_id} done.")
+        return consult
+
+    def gen_key_phrase_job(self):
+        consults = db_consultation.get_consult_by_condition("status", ">=", CONSULT_STATUS_DONE)
+        for consult in consults:
+            if not consult["key_phrase"]:
+                logger.info(f"gen_key_phrase_job consult id: {consult['id']} ...")
+                self.gen_consult_key_phrase(consult["id"])
+                logger.info(f"gen_key_phrase_job consult id: {consult['id']}  done")
 
 
 consultation_service = ConsultationService()

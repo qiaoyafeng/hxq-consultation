@@ -286,3 +286,34 @@ CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE = """
 保持规律作息，适量运动，必要时就医调整。
 
 """
+
+
+CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE = """
+任务描述：
+请对以下医患对话内容进行处理，完成以下任务：
+1. 从文本中提取出关键的词汇（关键词）。
+2. 对每个关键词计算词频（或权重，如 TF-IDF）。
+3. 针对关键词或对话整体进行情绪分析，判断情绪为积极、中性或消极，并给出相应情绪描述或得分。
+4. 请按照下面的 JSON 格式输出结果，输出内容中不得包含其他非 JSON 的文字，确保输出可以直接保存到数据库中。
+
+输入文本：{conversation}
+
+输出格式要求：
+
+{{
+    "keywords": [
+        {{
+            "keyword": "关键词1",
+            "frequency": 数值,
+            "emotion": "积极/中性/消极"
+        }},
+        {{
+            "keyword": "关键词2",
+            "frequency": 数值,
+            "emotion": "积极/中性/消极"
+        }},
+        ……
+    ]
+}}
+
+"""
