@@ -58,6 +58,18 @@ def get_consult_by_status(status):
     return consults
 
 
+def get_consult_by_condition(field, operator, value):
+    sql = f"SELECT * FROM {consult_table}  WHERE {field} {operator} {value} "
+    consults = query_sql(sql)
+    return consults
+
+
+def get_all_consults():
+    sql = f"SELECT * FROM {consult_table} "
+    consults = query_sql(sql)
+    return consults
+
+
 def get_day_consult(day):
     return query_sql(f"select * from {consult_table} where day ='{day}' ")
 

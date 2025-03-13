@@ -72,6 +72,10 @@ async def startup_event():
         consultation_service.gen_consult_report_job, "interval", seconds=3
     )
 
+    scheduler.add_job(
+        consultation_service.gen_health_advice_job, "interval", seconds=3
+    )
+
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
