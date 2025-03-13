@@ -8,7 +8,7 @@ import datetime
 from service.llm import hxq_llm, tongyi_llm
 from service.log import logger
 from service.question import question_service
-from utils import remove_think_tags
+from utils import remove_think_tags, extract_think_and_answer
 
 
 class ConsultationService:
@@ -59,17 +59,20 @@ class ConsultationService:
         user_message = {"role": "user", "content": CONSULT_REPORT_PROMPT_TEMPLATE.format(patient_info=patient_info,conversation=conversation)}
         chat_messages.append(user_message)
         logger.info(f"gen_consult_report chat_messages: {chat_messages}")
+        report_start_time = datetime.datetime.now()
         start = time.time()
-        # plat = LLM_HXQ_PLAT_ID
-        # model = LLM_HXQ_MODEL_DS_R1_8B_ID
-        # report = hxq_llm.chat(chat_messages)
-        plat = LLM_TONGYI_PLAT_ID
-        model = LLM_TONGYI_MODEL_QWEN_PLUS_ID
-        report = tongyi_llm.chat(chat_messages)
+        plat = LLM_HXQ_PLAT_ID
+        model = LLM_HXQ_MODEL_DS_R1_8B_ID
+        report = hxq_llm.chat(chat_messages)
+        # plat = LLM_TONGYI_PLAT_ID
+        # model = LLM_TONGYI_MODEL_QWEN_PLUS_ID
+        # report = tongyi_llm.chat(chat_messages)
         cost = (time.time() - start) * 1000
         db_consultation.add_ai_request(plat, model, f"{chat_messages}", f"{report}", cost)
         logger.info(f"gen_consult_report report: {report}")
-        self.update_consult({"id": consult_id, "report": remove_think_tags(report), "status": CONSULT_STATUS_REPORT})
+        report_think, report = extract_think_and_answer(report)
+        # logger.info(f"gen_consult_report: report_think: {report_think},  report: {report} ")
+        self.update_consult({"id": consult_id, "report_think": report_think, "report": report, "report_start_time": report_start_time, "report_end_time": datetime.datetime.now(), "status": CONSULT_STATUS_REPORT, })
         consult = self.get_consult(consult_id)
         logger.info(f"gen_consult_report: consult_id: {consult_id} done.")
         return consult

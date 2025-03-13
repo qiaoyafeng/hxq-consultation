@@ -4,6 +4,8 @@ from config import settings
 from db.mysql import update_sql, query_sql, build_create, build_update
 import datetime
 
+from service.log import logger
+
 consult_table = "consultation"
 ai_request_table = "ai_request"
 
@@ -56,6 +58,7 @@ def get_day_consult(day):
 
 def update_consult(info):
     sql = build_update(info, consult_table)
+    # logger.info(f"update_consult: sql: {sql} ")
     update_sql(sql)
 
 

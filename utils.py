@@ -57,7 +57,12 @@ def safe_int(value, default=0):
 
 def replace_special_character(raw_str):
     update_str = (
-        raw_str.replace("\n", "。").replace("\r", "").replace("【", "").replace("】", "").replace("[", "").replace("]", "")
+        raw_str.replace("\n", "。")
+        .replace("\r", "")
+        .replace("【", "")
+        .replace("】", "")
+        .replace("[", "")
+        .replace("]", "")
     )
     return update_str
 
@@ -72,8 +77,13 @@ def copy_file(source_path, target_path):
     shutil.copy(source_path, target_path)
 
 
+def extract_think_and_answer(response_text):
+    think_pattern = re.compile(r"<think>(.*?)</think>", re.DOTALL)
+    think_content = ",".join(think_pattern.findall(response_text))
+    answer_text = think_pattern.sub("", response_text).strip()
+    return think_content, answer_text
+
+
 def remove_think_tags(response):
-    cleaned_response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+    cleaned_response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
     return cleaned_response.strip()
-
-
