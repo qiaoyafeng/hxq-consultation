@@ -17,7 +17,7 @@ from starlette.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from constants import CONSULT_STATUS_DONE
-from schemas import CreateConsultRequest, QuestionNextRequest
+from schemas import CreateConsultRequest, QuestionNextRequest, UpdateConsultRequest
 from service.consultation import consultation_service
 from service.log import logger
 from service.question import question_service
@@ -115,6 +115,32 @@ async def create_consult(data_request: CreateConsultRequest, request: Request):
     consult = consultation_service.create_consult(name, sex, age, chief_complaint, batch_no)
     print(f"consult: {consult}")
     return build_resp(0, consult)
+
+
+@app.post("/api/update_consult", summary="更新问诊")
+async def update_consult(data_request: UpdateConsultRequest, request: Request):
+
+    logger.info(f"update_consult data_request: {data_request}")
+    batch_no = data_request.batch_no
+    consult_id = data_request.consult_id
+    if not (batch_no or consult_id):
+        return build_resp(422, {}, message="consult_id 或 batch_no字段")
+
+    if consult_id:
+        consult = consultation_service.get_consult(consult_id)
+    elif batch_no:
+        consult = consultation_service.get_consult_by_batch_no(batch_no)
+    else:
+        consult = None
+    if not consult:
+        return build_resp(400, {}, message="问诊记录不存在！")
+
+    filtered_dict = {k: v for k, v in data_request.model_dump().items() if (v and k != "consult_id" and k != "batch_no")}
+    logger.info(f"update_consult filtered_dict: {filtered_dict}")
+    consult_dict = {"id": consult["id"]}
+    consult_dict.update(filtered_dict)
+    consultation_service.update_consult(consult_dict)
+    return build_resp(0, {}, message="更新成功！")
 
 
 @app.post("/api/question_next", summary="获取问题")

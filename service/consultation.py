@@ -21,6 +21,9 @@ class ConsultationService:
     def get_consult(self, consult_id):
         return db_consultation.get_consult_by_id(consult_id)
 
+    def get_consult_by_batch_no(self, batch_no):
+        return db_consultation.get_consult_by_batch_no(batch_no)
+
     def update_consult(self, info):
         db_consultation.update_consult(info)
 

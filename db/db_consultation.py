@@ -46,6 +46,12 @@ def get_consult_by_id(consult_id):
     return consults[-1] if consults else None
 
 
+def get_consult_by_batch_no(batch_no):
+    sql = f"SELECT * FROM {consult_table}  WHERE batch_no = '{batch_no}' "
+    consults = query_sql(sql)
+    return consults[-1] if consults else None
+
+
 def get_consult_by_status(status):
     sql = f"SELECT * FROM {consult_table}  WHERE status = {status} "
     consults = query_sql(sql)
