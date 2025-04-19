@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     CHAT_MIN_ROUNDS: int = 12
     CHAT_MAX_ROUNDS: int = 15
 
+    # IPT 对话轮数
+    CHAT_IPT_ROUNDS: int = 20
+
     class Config:
         env_file = ".env"
 

@@ -12,7 +12,7 @@ ai_request_table = "ai_request"
 
 def create_consult(name, sex, age, chief_complaint, batch_no, day=datetime.date.today()):
     if name.startswith("ipt"):
-        question_nums = 15
+        question_nums = settings.CHAT_IPT_ROUNDS
     else:
         question_nums = random.randint(
             settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS
