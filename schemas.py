@@ -27,3 +27,7 @@ class QuestionNextRequest(BaseModel):
     consult_id: Optional[int] = None
     answer: Optional[str] = None
 
+
+class VLLMChatCompletionRequest(BaseModel):
+    messages: list[dict]
+    model: Optional[str] = None

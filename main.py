@@ -1,6 +1,7 @@
 import datetime
 import os
 import random
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -9,19 +10,20 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, UploadFile, Request, status
+from fastapi import FastAPI, UploadFile, Request, status, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from constants import CONSULT_STATUS_DONE
+from constants import CONSULT_STATUS_DONE, CONSULT_CASE_STATUS_NO, CONSULT_CASE_STATUS_INIT
 from schemas import CreateConsultRequest, QuestionNextRequest, UpdateConsultRequest
 from service.consultation import consultation_service
+from service.file import file_service
 from service.log import logger
 from service.question import question_service
-from utils import get_resp, replace_special_character, build_resp
+from utils import get_resp, replace_special_character, build_resp, has_name_file
 from config import Config, settings
 
 app = FastAPI(
@@ -72,13 +74,17 @@ async def startup_event():
         consultation_service.gen_consult_report_job, "interval", seconds=3
     )
 
+    # scheduler.add_job(
+    #     consultation_service.gen_health_advice_job, "interval", seconds=3
+    # )
+    #
+    # scheduler.add_job(
+    #     consultation_service.gen_key_phrase_job, "interval", seconds=3
+    # )
     scheduler.add_job(
-        consultation_service.gen_health_advice_job, "interval", seconds=3
+        consultation_service.vllm_case_content_job, "interval", seconds=3
     )
 
-    scheduler.add_job(
-        consultation_service.gen_key_phrase_job, "interval", seconds=3
-    )
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -119,9 +125,26 @@ async def create_consult(data_request: CreateConsultRequest, request: Request):
     age = data_request.age
     chief_complaint = data_request.chief_complaint
     batch_no = data_request.batch_no
-    consult = consultation_service.create_consult(name, sex, age, chief_complaint, batch_no)
+
+    case_status = CONSULT_CASE_STATUS_NO
+    extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.gif']
+
+    if has_name_file(f"{TEMP_PATH}", batch_no, extensions):
+        case_status = CONSULT_CASE_STATUS_INIT
+    logger.info(f"name: {name}, sex: {sex}, age: {age}, chief_complaint: {chief_complaint}, batch_no: {batch_no}, case_status: {case_status}")
+
+    consult = consultation_service.create_consult(name, sex, age, chief_complaint, batch_no, case_status)
     print(f"consult: {consult}")
     return build_resp(0, consult)
+
+
+@app.post("/api/upload_file", summary="上传文件")
+async def upload_file(request: Request, file: UploadFile = File()):
+    batch_no = f"{uuid.uuid4().hex}"
+    url, path, name = await file_service.uploadfile(file, file_stem=batch_no)
+    file_info = {"path": path, "url": url, "name": name}
+    data = {"batch_no": batch_no, "file_info": file_info}
+    return build_resp(0, data)
 
 
 @app.post("/api/update_consult", summary="更新问诊")

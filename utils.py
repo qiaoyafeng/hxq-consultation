@@ -2,6 +2,8 @@ import base64
 import re
 import shutil
 import uuid
+from pathlib import Path
+
 import requests
 from config import Config
 
@@ -87,3 +89,20 @@ def extract_think_and_answer(response_text):
 def remove_think_tags(response):
     cleaned_response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
     return cleaned_response.strip()
+
+
+def has_name_file(directory, file_stem,  extensions):
+    for file in Path(directory).iterdir():
+        if file.is_file() and file.stem == file_stem and file.suffix.lower() in extensions:
+            return True
+    return False
+
+
+def get_name_file(directory, file_stem,  extensions=[]):
+    for file in Path(directory).iterdir():
+        if extensions:
+            if file.is_file() and file.stem == file_stem and file.suffix.lower() in extensions:
+                return file
+        else:
+            if file.is_file() and file.stem == file_stem:
+                return file

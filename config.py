@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
+    # HXQ VLLM API
+    HXQ_VLLM_API_DOMAIN: str = "https://ai.haoxinqing.cn/vl-api"
+
 
 @lru_cache()
 def get_settings():

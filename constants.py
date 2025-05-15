@@ -5,6 +5,13 @@ CONSULT_STATUS_PROCESSING = 2
 CONSULT_STATUS_DONE = 3
 CONSULT_STATUS_REPORT = 4
 
+CONSULT_CASE_STATUS_NO = 0
+CONSULT_CASE_STATUS_INIT = 1
+CONSULT_CASE_STATUS_PROCESSING = 2
+CONSULT_CASE_STATUS_DONE = 3
+CONSULT_CASE_STATUS_ERROR = 4
+
+
 # ########################################### LLM参数 #######################################
 
 LLM_HXQ_PLAT_ID = 1  # hxq_llm
@@ -315,4 +322,22 @@ CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE = """
     ]
 }}
 
+"""
+
+
+# ########################################### VLLM相关参数 #######################################
+
+CONSULT_VLLM_CASE_TEMPLATE = """
+你是一位专业医学助理和文档识别专家。
+
+我将上传一张医院病例图片，内容来自不同医院，结构不固定，可能包含患者信息、诊断记录、检验结果、医生建议等内容。
+
+请以OCR方式识别图片中的全部文字内容，要求：
+- 内容完整、专业；
+- 保留原有医学术语、字段、表述；
+- 遵循自然阅读顺序（从上到下、从左到右）；
+- 忽略图像中不清晰或无法识别的部分；
+- 不要做总结或分析。
+
+请开始识别。
 """

@@ -10,13 +10,15 @@ consult_table = "consultation"
 ai_request_table = "ai_request"
 
 
-def create_consult(name, sex, age, chief_complaint, batch_no, day=datetime.date.today()):
+def create_consult(name, sex, age, chief_complaint, batch_no, case_status, day=datetime.date.today()):
     if name.startswith("ipt"):
         question_nums = settings.CHAT_IPT_ROUNDS
+        is_ipt = 1
     else:
         question_nums = random.randint(
             settings.CHAT_MIN_ROUNDS, settings.CHAT_MAX_ROUNDS
         )
+        is_ipt = 0
     info = {
         "name": name,
         "sex": sex,
@@ -25,6 +27,8 @@ def create_consult(name, sex, age, chief_complaint, batch_no, day=datetime.date.
         "day": day,
         "question_nums": question_nums,
         "start_time": datetime.datetime.now(),
+        "is_ipt": is_ipt,
+        "case_status": case_status,
     }
     if chief_complaint:
         info.update({"chief_complaint": chief_complaint})
