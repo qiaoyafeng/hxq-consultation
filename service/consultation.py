@@ -6,7 +6,7 @@ from pathlib import Path
 from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CONSULT_STATUS_DONE, LLM_HXQ_PLAT_ID, \
     LLM_TONGYI_PLAT_ID, LLM_TONGYI_MODEL_QWEN_PLUS_ID, LLM_HXQ_MODEL_DS_R1_8B_ID, CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE, \
     CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE, CONSULT_CASE_STATUS_INIT, CONSULT_VLLM_CASE_TEMPLATE, \
-    CONSULT_CASE_STATUS_DONE, CONSULT_CASE_STATUS_ERROR
+    CONSULT_CASE_STATUS_DONE, CONSULT_CASE_STATUS_ERROR, CONSULT_CASE_STATUS_NO
 from db import db_consultation
 import datetime
 
@@ -40,14 +40,14 @@ class ConsultationService:
     def get_consult_questions(self, consult_id):
         return self.question_service.get_consult_questions(consult_id)
 
-    def get_consult_next_question(self, consult_id, answer=None, questions=None, is_ipt=False, is_last_question=False):
+    def get_consult_next_question(self, consult_id, answer=None, questions=None, is_ipt=False, is_last_question=False, case_status=CONSULT_CASE_STATUS_NO, case_content=""):
         if questions:
             messages = []
             for q in questions:
                 messages.extend([{"role": "assistant", "content": f"{q['question']}"}, {"role": "user", "content": f"{q['answer']}"}])
-            question = self.question_service.next_question(answer, messages=messages, is_ipt=is_ipt, is_last_question=is_last_question)
+            question = self.question_service.next_question(answer, messages=messages, is_ipt=is_ipt, is_last_question=is_last_question, case_status=case_status, case_content=case_content)
         else:
-            question = self.question_service.next_question(answer, is_ipt=is_ipt)
+            question = self.question_service.next_question(answer, is_ipt=is_ipt, case_status=case_status, case_content=case_content)
 
         self.question_service.create_consult_question(consult_id, question)
         return question
@@ -221,8 +221,15 @@ class ConsultationService:
 
         resize_image_name = f"{uuid.uuid4().hex}.{case_image.suffix}"
         resize_image_path = f"{TEMP_PATH}/{resize_image_name}"
-
-        self.file_service.resize_image_to_fit(case_image, max_width=500, max_height=600, save_path=resize_image_path)
+        try:
+            self.file_service.resize_image_to_fit(case_image, max_width=500, max_height=600, save_path=resize_image_path)
+        except Exception as e:
+            logger.info(
+                f"vllm_case_content resize_image_to_fit error: {e}"
+            )
+            self.update_consult(
+                {"id": consult_id, "case_status": CONSULT_CASE_STATUS_ERROR, "case_content": "病历图片压缩异常"})
+            return
 
         resp_json = self.file_service.upload_file_to_oss(oss_url, file_path, Path(resize_image_path).read_bytes()).json()
 

@@ -63,7 +63,9 @@ class FileService:
 
         if save_path is None:
             save_path = image_path  # 覆盖原图
-
+        if img.mode == 'RGBA':
+            # 将RGBA模式转换为RGB模式
+            img = img.convert('RGB')
         img.save(save_path)
         return original_size, img.size
 

@@ -1,4 +1,4 @@
-from constants import QUESTIONS, IPT_QUESTIONS
+from constants import QUESTIONS, IPT_QUESTIONS, CONSULT_CASE_STATUS_NO
 from db import db_consultation
 import datetime
 import os
@@ -22,12 +22,15 @@ class QuestionService:
         self.tongyi_llm = tongyi_llm
         self.hxq_llm = hxq_llm
 
-    def next_question(self, answer, messages=[], is_ipt=False, is_last_question=False):
+    def next_question(self, answer, messages=[], is_ipt=False, is_last_question=False, case_status=CONSULT_CASE_STATUS_NO, case_content=""):
         if is_ipt:
             system_content = f"你是一位名叫心心的精神心理科的医生，请根据下面的问诊问题，模拟医生的口气对我进行问诊，每次输出只能问其中一道问题。可以增加些你的理解内容，但问题含义不能变，并且前后问题要有关联。如果回答与问题有偏离，需要共情理解后，直接回到问题上来，字数不能超过50字。以下是所有问题:{IPT_QUESTIONS}"
         else:
             # system_content = f"你是一位名叫心心的精神心理科的医生，请根据下面的问诊问题，模拟医生的口气对我进行问诊，每次输出只能问其中一道问题。可以增加些你的理解内容，但问题含义不能变，并且前后问题要有关联。如果回答与问题有偏离，需要共情理解后，直接回到问题上来，字数不能超过50字。以下是所有问题:{QUESTIONS}"
             system_content = f"你是一位名叫心心的精神心理科的医生，模拟医生的口气对我进行问诊，每次输出只能问一道问题，语气更口语化，让患者感觉亲切。取消模拟动作铺垫类提问，只是咨询问诊。不对我的回复进行评论。不要对我的回复内容重复。医生第一句话从：我是好心情精神科虚拟医生心心，请问您是感觉哪里不适，还是希望就其他健康问题进行咨询？开始，字数不能超过50字。"
+        if case_status:
+            system_content = f"你是一位患者，模拟患者的口气让医生对你进行问诊，字数不能超过50字。下面是这次的病例：{case_content}"
+
         chat_messages = [
             {
                 "role": "system",

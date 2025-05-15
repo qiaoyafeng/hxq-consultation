@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from constants import CONSULT_STATUS_DONE, CONSULT_CASE_STATUS_NO, CONSULT_CASE_STATUS_INIT
+from constants import CONSULT_STATUS_DONE, CONSULT_CASE_STATUS_NO, CONSULT_CASE_STATUS_INIT, CONSULT_CASE_STATUS_DONE
 from schemas import CreateConsultRequest, QuestionNextRequest, UpdateConsultRequest
 from service.consultation import consultation_service
 from service.file import file_service
@@ -187,9 +187,10 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
     consult = consultation_service.get_consult(consult_id)
     if not consult:
         return build_resp(404, {}, message="问诊记录不存在！")
-    is_ipt = False
-    if consult["name"].startswith("ipt"):
-        is_ipt = True
+    is_ipt = consult["is_ipt"]
+    case_status = consult["case_status"]
+    case_content = consult["case_content"]
+
     questions = question_service.get_consult_questions(consult_id)
     is_last_question = False
     if questions:
@@ -207,8 +208,10 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
                     questions,
                     is_ipt=is_ipt,
                     is_last_question=is_last_question,
+                    case_status=case_status,
+                    case_content=case_content
                 )
-                return build_resp(0, {"is_has_next": 0, "question": question})
+                return build_resp(0, {"is_has_next": 0, "question": question, "case_status": case_status})
             else:
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
@@ -220,13 +223,17 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
             questions,
             is_ipt=is_ipt,
             is_last_question=is_last_question,
+            case_status=case_status,
+            case_content=case_content
         )
     else:
+        if case_status and case_status < CONSULT_CASE_STATUS_DONE:
+            return build_resp(0, {"is_has_next": 0, "question": "", "case_status": case_status})
         question = consultation_service.get_consult_next_question(
-            consult_id, answer, is_ipt=is_ipt
+            consult_id, answer, is_ipt=is_ipt, case_status=case_status, case_content=case_content
         )
     logger.info(f"question_next: consult: {consult}, question: {question}")
-    return build_resp(0, {"is_has_next": 1, "question": question})
+    return build_resp(0, {"is_has_next": 1, "question": question, "case_status": case_status})
 
 
 @app.get("/api/get_consult", summary="获取问诊")
