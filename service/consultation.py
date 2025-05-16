@@ -6,7 +6,8 @@ from pathlib import Path
 from constants import CONSULT_REPORT_PROMPT_TEMPLATE, CONSULT_STATUS_REPORT, CONSULT_STATUS_DONE, LLM_HXQ_PLAT_ID, \
     LLM_TONGYI_PLAT_ID, LLM_TONGYI_MODEL_QWEN_PLUS_ID, LLM_HXQ_MODEL_DS_R1_8B_ID, CONSULT_HEALTH_ADVICE_PROMPT_TEMPLATE, \
     CONSULT_KEY_PHRASE_EXTRACTION_PROMPT_TEMPLATE, CONSULT_CASE_STATUS_INIT, CONSULT_VLLM_CASE_TEMPLATE, \
-    CONSULT_CASE_STATUS_DONE, CONSULT_CASE_STATUS_ERROR, CONSULT_CASE_STATUS_NO
+    CONSULT_CASE_STATUS_DONE, CONSULT_CASE_STATUS_ERROR, CONSULT_CASE_STATUS_NO, CONSULT_PATIENT_REPORT_PROMPT_TEMPLATE, \
+    CONSULT_REPORT_EVALUATION_PROMPT_TEMPLATE, CONSULT_STATUS_EVALUATION
 from db import db_consultation
 import datetime
 
@@ -52,12 +53,15 @@ class ConsultationService:
         self.question_service.create_consult_question(consult_id, question)
         return question
 
-    def get_consult_qa_str_by_questions(self, questions, is_has_title=True):
+    def get_consult_qa_str_by_questions(self, questions, is_has_title=True, is_change_role=False):
         logger.info(f"get_consult_qa_str_by_questions: questions: {questions}....")
         q_a_str = []
         for q in questions:
             if is_has_title:
-                q_str = f"医生：{q['question']} \n患者：{q['answer']} \n"
+                if is_change_role:
+                    q_str = f"患者：{q['question']} \n医生：{q['answer']} \n"
+                else:
+                    q_str = f"医生：{q['question']} \n患者：{q['answer']} \n"
             else:
                 q_str = f"{q['question']} \n {q['answer']} \n"
             q_a_str.append(q_str)
@@ -79,15 +83,28 @@ class ConsultationService:
             return
         logger.info(f"gen_consult_report: consult: {consult}, questions: {questions}， ")
 
+        patient_info = f"姓名：{consult['name']}  性别：{'男' if consult['sex'] else '女'} 年龄： {consult['age']} "
+
+        case_content = consult['case_status']
+        case_status = consult['case_status']
+
+        if case_status:
+            conversation = self.get_consult_qa_str_by_questions(questions, is_change_role=True)
+            system_content = f"你是一位精神心理科的医生，擅长从医患对话和患者提供的病历中识别心理疾病特征。现在需要根据以下医患对话生成专业问诊报告："
+            user_content = CONSULT_PATIENT_REPORT_PROMPT_TEMPLATE.format(case_content=case_content, conversation=conversation)
+        else:
+            conversation = self.get_consult_qa_str_by_questions(questions)
+            system_content = f"你是一位精神心理科的医生，擅长从对话中识别心理疾病特征。现在需要根据以下医患对话生成专业问诊报告："
+            user_content = CONSULT_REPORT_PROMPT_TEMPLATE.format(patient_info=patient_info, conversation=conversation)
+
         chat_messages = [
             {
                 "role": "system",
-                "content": f"你是一位精神心理科的医生，擅长从对话中识别心理疾病特征。现在需要根据以下医患对话生成专业问诊报告：",
+                "content": system_content,
             }
         ]
-        conversation = self.get_consult_qa_str_by_questions(questions)
-        patient_info = f"姓名：{consult['name']}  性别：{'男' if consult['sex'] else '女'} 年龄： {consult['age']} "
-        user_message = {"role": "user", "content": CONSULT_REPORT_PROMPT_TEMPLATE.format(patient_info=patient_info,conversation=conversation)}
+
+        user_message = {"role": "user", "content": user_content}
         chat_messages.append(user_message)
         logger.info(f"gen_consult_report chat_messages: {chat_messages}")
         report_start_time = datetime.datetime.now()
@@ -117,6 +134,66 @@ class ConsultationService:
 
             self.gen_consult_report(consult["id"])
         logger.info(f"gen_consult_report_job done")
+
+    def gen_consult_report_evaluation(self, consult_id):
+        logger.info(f"gen_consult_report_evaluation: consult_id: {consult_id}....")
+        consult = self.get_consult(consult_id)
+
+        questions = self.get_consult_questions(consult_id)
+        if not(consult or questions):
+            return
+
+        patient_info = f"姓名：{consult['name']}  性别：{'男' if consult['sex'] else '女'} 年龄： {consult['age']} "
+
+        case_status = consult['case_status']
+        case_content = consult['case_status']
+        report = consult['report']
+
+        if case_status:
+            conversation = self.get_consult_qa_str_by_questions(questions, is_change_role=True)
+            system_content = f"你是一名资深医疗质量评估专家，擅长从医患沟通记录、诊断报告和患者既往病历中分析医生的诊疗表现。请根据本次诊疗过程进行全面评估和具体分析。"
+            user_content = CONSULT_REPORT_EVALUATION_PROMPT_TEMPLATE.format(case_content=case_content, conversation=conversation, report=report)
+        else:
+            return
+
+        chat_messages = [
+            {
+                "role": "system",
+                "content": system_content,
+            }
+        ]
+
+        user_message = {"role": "user", "content": user_content}
+        chat_messages.append(user_message)
+        logger.info(f"gen_consult_report chat_messages: {chat_messages}")
+        report_start_time = datetime.datetime.now()
+        start = time.time()
+        plat = LLM_HXQ_PLAT_ID
+        model = LLM_HXQ_MODEL_DS_R1_8B_ID
+        report = hxq_llm.chat(chat_messages)
+        # plat = LLM_TONGYI_PLAT_ID
+        # model = LLM_TONGYI_MODEL_QWEN_PLUS_ID
+        # report = tongyi_llm.chat(chat_messages)
+        cost = (time.time() - start) * 1000
+        db_consultation.add_ai_request(plat, model, f"{chat_messages}", f"{report}", cost)
+        logger.info(f"gen_consult_report report: {report}")
+        report_think, report = extract_think_and_answer(report)
+        # logger.info(f"gen_consult_report: report_think: {report_think},  report: {report} ")
+        self.update_consult({"id": consult_id, "report_evaluation": report, "status": CONSULT_STATUS_EVALUATION})
+        consult = self.get_consult(consult_id)
+        logger.info(f"gen_consult_report_evaluation: consult_id: {consult_id} done.")
+        return consult
+
+    def gen_consult_report_evaluation_job(self):
+        consults = db_consultation.get_consult_by_status(CONSULT_STATUS_REPORT)
+        if not consults:
+            return
+        for consult in consults:
+            case_status = consult['case_status']
+            case_content = consult['case_status']
+            report = consult['report']
+            if case_status and case_content and report:
+                self.gen_consult_report_evaluation(consult["id"])
 
     def gen_consult_health_advice(self, consult_id):
         logger.info(f"gen_consult_health_advice: consult_id: {consult_id}....")

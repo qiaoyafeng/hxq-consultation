@@ -85,6 +85,9 @@ async def startup_event():
         consultation_service.vllm_case_content_job, "interval", seconds=3
     )
 
+    scheduler.add_job(
+        consultation_service.gen_consult_report_evaluation_job, "interval", seconds=3
+    )
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
