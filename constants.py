@@ -296,7 +296,7 @@ CONSULT_REPORT_EVALUATION_PROMPT_TEMPLATE = """
 对话记录：{conversation}
 
 【医生填写的诊断报告】：
-诊断报告:{{report}}
+诊断报告:{report}
 
 请你按照如下结构输出医生诊疗表现分析报告：
 
