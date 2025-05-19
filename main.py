@@ -215,6 +215,8 @@ async def question_next(data_request: QuestionNextRequest, request: Request):
                     case_content=case_content
                 )
                 return build_resp(0, {"is_has_next": 0, "question": question, "case_status": case_status})
+            elif len(questions) > consult["question_nums"]:
+                return build_resp(0, {"is_has_next": 0, "question": "", "case_status": case_status})
             else:
                 question_service.update_consult_question(questions[-1]["id"], answer)
                 questions[-1]["answer"] = answer
